@@ -71,10 +71,17 @@ describe('Application structure', () => {
   it('delegates Cloudflare Pages requests through the shared handler with env overrides', async () => {
     const fetchSpy = mockUpstreamFetch();
     const waitUntil = vi.fn();
+    const request = new Request('https://pages.example.com/gh/user/repo/pages-file.txt');
+    Object.defineProperty(request, 'eo', {
+      value: { clientIp: '203.0.113.10' }
+    });
 
     const response = await onRequest({
-      request: new Request('https://pages.example.com/gh/user/repo/pages-file.txt'),
-      env: { CACHE_DURATION: '42' },
+      request,
+      env: {
+        CACHE_DURATION: '42',
+        XGET_ALLOWED_CLIENT_IPS: '203.0.113.10, 2001:db8::10'
+      },
       params: {},
       waitUntil,
       next: async () => new Response('next'),
@@ -87,6 +94,45 @@ describe('Application structure', () => {
     );
     expect(await response.text()).toBe('adapter-ok');
     expect(response.headers.get('Cache-Control')).toContain('s-maxage=42');
+  });
+
+  it('denies Cloudflare Pages requests outside the EdgeOne client IP allowlist', async () => {
+    const fetchSpy = mockUpstreamFetch();
+    const request = new Request('https://pages.example.com/gh/user/repo/private-file.txt');
+    Object.defineProperty(request, 'eo', {
+      value: { clientIp: '198.51.100.20' }
+    });
+
+    const response = await onRequest({
+      request,
+      env: { XGET_ALLOWED_CLIENT_IPS: '203.0.113.10' },
+      params: {},
+      waitUntil: vi.fn(),
+      next: async () => new Response('next'),
+      data: {}
+    });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(response.status).toBe(403);
+    expect(await response.text()).toBe('Forbidden');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('fails closed when the EdgeOne client IP allowlist is missing', async () => {
+    const fetchSpy = mockUpstreamFetch();
+
+    const response = await onRequest({
+      request: new Request('https://pages.example.com/gh/user/repo/private-file.txt'),
+      env: {},
+      params: {},
+      waitUntil: vi.fn(),
+      next: async () => new Response('next'),
+      data: {}
+    });
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(response.status).toBe(503);
+    expect(await response.text()).toBe('Access policy is not configured');
   });
 
   it('delegates Netlify/Vercel function requests through the shared handler with env overrides', async () => {
