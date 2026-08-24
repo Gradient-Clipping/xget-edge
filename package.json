@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.21.3",
-    "@cloudflare/workers-types": "^5.20260818.1",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260821.1",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
