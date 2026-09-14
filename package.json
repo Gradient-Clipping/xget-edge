@@ -16,7 +16,7 @@
     "prettier": "^3.9.6",
     "simple-git-hooks": "^2.14.0",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11",
+    "vitest": "^5.0.0",
     "wrangler": "^4.131.0"
   },
   "name": "xget",
