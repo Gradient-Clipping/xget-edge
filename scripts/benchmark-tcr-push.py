@@ -22,7 +22,9 @@ cf_url = urlsplit(ROUTES['cloudflare'])
 if (cf_url.scheme != 'https' or not (cf_url.hostname or '').endswith('.workers.dev')
         or cf_url.username or cf_url.password or cf_url.path or cf_url.query or cf_url.fragment):
     raise SystemExit('Cloudflare benchmark URL must be a workers.dev HTTPS origin')
-BASIC = 'Basic ' + base64.b64encode((os.environ['TCR_USERNAME'] + ':' + os.environ['TCR_PASSWORD']).encode()).decode()
+USERNAME = os.environ['TCR_USERNAME'].strip()
+PASSWORD = os.environ['TCR_PASSWORD'].strip()
+BASIC = 'Basic ' + base64.b64encode((USERNAME + ':' + PASSWORD).encode()).decode()
 OUT = Path('tcr-benchmark-results.jsonl')
 OUT.write_text('')
 RUN = os.environ.get('GITHUB_RUN_ID', str(int(time.time())))
@@ -78,7 +80,10 @@ class Registry:
             path = '/cr/tcr/v2/auth?' + urlencode({'service': 'Xget', 'scope': f'repository:cr/tcr/{REPO}:pull,push'})
         status, _, body = self.request('GET', path, headers={'Authorization': BASIC}, authorization=False)
         if status != 200:
-            raise RuntimeError(f'token service HTTP {status}')
+            category = ('adapter_forbidden' if body.strip() == b'Forbidden'
+                        else 'provider_html' if b'<html' in body.lower()
+                        else 'other_response')
+            raise RuntimeError(f'token service HTTP {status} ({category})')
         data = json.loads(body)
         self.token = data.get('token') or data.get('access_token')
         if not self.token:
@@ -224,8 +229,8 @@ del large_payload
 for route in ROUTES:
     origin_host = urlsplit(ROUTES[route]).netloc
     try:
-        login = subprocess.run(['docker', 'login', origin_host, '--username', os.environ['TCR_USERNAME'], '--password-stdin'],
-                               input=os.environ['TCR_PASSWORD'], capture_output=True, text=True, timeout=60)
+        login = subprocess.run(['docker', 'login', origin_host, '--username', USERNAME, '--password-stdin'],
+                               input=PASSWORD, capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:
         emit(dict(kind='docker_login', route=route, success=False, exit=124))
         continue
