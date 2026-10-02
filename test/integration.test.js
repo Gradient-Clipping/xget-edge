@@ -1,18 +1,33 @@
 import { SELF } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('Integration Tests', () => {
   describe('End-to-End Platform Integration', () => {
     it('should proxy GitHub file requests correctly', async () => {
       const testUrl = 'https://example.com/gh/microsoft/vscode/blob/main/package.json';
-      const response = await SELF.fetch(testUrl, { method: 'HEAD' });
+      // Check routing and response shaping independently of GitHub's HTML-page
+      // availability. The following raw-file and release tests still use the network.
+      const upstream = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(null, {
+          status: 200,
+          headers: { 'Content-Length': '42' }
+        })
+      );
+      try {
+        const response = await SELF.fetch(testUrl, { method: 'HEAD' });
 
-      // Should attempt to proxy to GitHub
-      expect([200, 301, 302, 404]).toContain(response.status);
+        expect(upstream).toHaveBeenCalledWith(
+          'https://github.com/microsoft/vscode/blob/main/package.json',
+          expect.objectContaining({ method: 'HEAD' })
+        );
+        expect(response.status).toBe(200);
 
-      // Should include security headers
-      expect(response.headers.get('Strict-Transport-Security')).toBeTruthy();
-      expect(response.headers.get('X-Performance-Metrics')).toBeTruthy();
+        // Should include security headers
+        expect(response.headers.get('Strict-Transport-Security')).toBeTruthy();
+        expect(response.headers.get('X-Performance-Metrics')).toBeTruthy();
+      } finally {
+        upstream.mockRestore();
+      }
     });
 
     it('should handle GitHub raw file requests', async () => {
