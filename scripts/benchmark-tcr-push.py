@@ -19,9 +19,10 @@ DIRECT = 'https://ccr.ccs.tencentyun.com'
 ROUTES = {'direct': DIRECT, 'edgeone': 'https://xget.lazycampus.com',
           'cloudflare': os.environ['CF_BENCHMARK_URL'].rstrip('/')}
 cf_url = urlsplit(ROUTES['cloudflare'])
-if (cf_url.scheme != 'https' or not (cf_url.hostname or '').endswith('.workers.dev')
+if (cf_url.scheme != 'https' or not ((cf_url.hostname or '').endswith('.workers.dev')
+                                  or cf_url.hostname == 'xget-cf-benchmark.lazycampus.com')
         or cf_url.username or cf_url.password or cf_url.path or cf_url.query or cf_url.fragment):
-    raise SystemExit('Cloudflare benchmark URL must be a workers.dev HTTPS origin')
+    raise SystemExit('Cloudflare benchmark URL must be an approved HTTPS origin')
 USERNAME = os.environ['TCR_USERNAME'].strip()
 PASSWORD = os.environ['TCR_PASSWORD'].strip()
 BASIC = 'Basic ' + base64.b64encode((USERNAME + ':' + PASSWORD).encode()).decode()
