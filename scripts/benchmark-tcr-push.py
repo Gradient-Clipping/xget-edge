@@ -214,6 +214,13 @@ for mode in ('chunked', 'single'):
         for route in routes[shift:] + routes[:shift]:
             push(route, attempt, mode, payload)
 
+# Test a production-relevant layer above the common CF account upload limit.
+# Small-layer success must not be extrapolated to large image compatibility.
+large_payload = image_payload(128*1024*1024)
+for route in ('edgeone', 'cloudflare', 'direct'):
+    push(route, 1, 'single128', large_payload)
+del large_payload
+
 for route in ROUTES:
     origin_host = urlsplit(ROUTES[route]).netloc
     try:

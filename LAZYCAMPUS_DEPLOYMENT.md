@@ -49,7 +49,8 @@ artifact. Credentials, tokens, and signed upload URLs are never recorded.
 
 EdgeOne Makers Edge Functions currently limit each request body to 1 MB. The
 benchmark tests 512 KiB chunks, an ordinary 8 MiB layer PATCH, and native Docker
-pushes separately. Passing chunked tests does not prove that normal Docker
+pushes separately. It also probes one 128 MiB layer per route to expose account
+upload limits beyond small-image tests. Passing chunked tests does not prove that normal Docker
 uploads or production-size layers are supported. See the
 [Makers limits](https://pages.edgeone.ai/document/edge-functions) and
 [Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
@@ -60,6 +61,10 @@ uploads or production-size layers are supported. See the
 2. A successful CI run regenerates and force-pushes the `pages` branch.
 3. EdgeOne Makers watches `pages` and deploys it automatically.
 4. `xget.lazycampus.com` is bound as a DNS-only custom domain.
+
+CI always runs tests and generates coverage. The external Codecov upload runs
+only when `CODECOV_TOKEN` is configured; missing report-service credentials do
+not bypass tests or prevent the Pages synchronization gate from completing.
 
 The upstream token-based EdgeOne workflow is intentionally removed. EdgeOne's
 Git integration is scoped to this repository instead of storing a broad API
