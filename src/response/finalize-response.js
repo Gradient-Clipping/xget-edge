@@ -22,6 +22,7 @@ import {
   shouldRewriteTextResponse
 } from '../utils/rewrite.js';
 import { resolveCachePolicy, resolveResponseCachePolicy } from '../upstream/cache-policy.js';
+import { rewriteRegistryLocation } from '../protocols/docker.js';
 import { addSecurityHeaders, createErrorResponse } from '../utils/security.js';
 
 /**
@@ -147,6 +148,17 @@ async function finalizeSuccessfulResponse({
   }
 
   const headers = new Headers(response.headers);
+
+  if (isDocker) {
+    headers.set('Cache-Control', 'no-store');
+    const location = headers.get('Location');
+    if (location) {
+      headers.set('Location', rewriteRegistryLocation(location, targetUrl, url, platform));
+    }
+    if (headers.get('Content-Length') === '0' || response.status === 204) {
+      responseBody = null;
+    }
+  }
 
   if (rewrittenContentLength !== null) {
     headers.set('Content-Length', String(rewrittenContentLength));

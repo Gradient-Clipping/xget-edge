@@ -105,6 +105,7 @@ export const PLATFORM_CATALOG = {
   'cr-mcr': 'https://mcr.microsoft.com',
   'cr-ecr': 'https://public.ecr.aws',
   'cr-ghcr': 'https://ghcr.io',
+  'cr-tcr': 'https://ccr.ccs.tencentyun.com',
   'cr-gitlab': 'https://registry.gitlab.com',
   'cr-redhat': 'https://registry.redhat.io',
   'cr-oracle': 'https://container-registry.oracle.com',

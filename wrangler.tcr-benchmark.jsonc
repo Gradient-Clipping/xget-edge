@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lazycampus-xget-tcr-benchmark",
+  "main": "adapters/workers/tcr-benchmark.js",
+  "compatibility_date": "2026-10-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "vars": {
+    "XGET_ALLOWED_CLIENT_IPS": "1.14.95.189",
+    "MAX_RETRIES": "1",
+    "TIMEOUT_SECONDS": "120"
+  },
+  "observability": { "enabled": false }
+}

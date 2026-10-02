@@ -17,6 +17,7 @@
  */
 
 import { handleRequest } from '../../../src/app/handle-request.js';
+import { responseUnauthorized } from '../../../src/protocols/docker.js';
 
 const ACCESS_POLICY_ENV = 'XGET_ALLOWED_CLIENT_IPS';
 
@@ -110,9 +111,24 @@ function createAccessPolicyResponse(status) {
 export async function onRequest(context) {
   // Extract request, env, and create an execution context compatible with Workers
   const { request, env, waitUntil } = context;
+  let proxyRequest = request;
   const access = checkClientAccess(request, env);
   if (!access.allowed) {
-    return createAccessPolicyResponse(access.status);
+    const url = new URL(request.url);
+    const isRegistryProbe =
+      /^\/v2\/?$/.test(url.pathname) && ['GET', 'HEAD'].includes(request.method);
+    const isTcr = /^\/(?:v2\/cr\/tcr\/|cr\/tcr\/v2\/)/.test(url.pathname);
+    // Runner IPs vary. Only the fixed TCR route may use upstream Registry credentials
+    // instead of the server IP allowlist; other proxy routes remain IP-restricted.
+    if (access.status === 503 || (!isRegistryProbe && !isTcr)) {
+      return createAccessPolicyResponse(access.status);
+    }
+    if (!/^(Basic|Bearer) \S+$/i.test(request.headers.get('Authorization') || '')) {
+      return responseUnauthorized(url, 'cr-tcr');
+    }
+    if (isRegistryProbe) {
+      proxyRequest = new Request(`${url.origin}/cr/tcr/v2/`, request);
+    }
   }
 
   // Create a minimal ExecutionContext-like object for compatibility
@@ -125,5 +141,15 @@ export async function onRequest(context) {
   };
 
   // Delegate to the main request handler
-  return handleRequest(request, env, ctx);
+  const response = await handleRequest(proxyRequest, env, ctx);
+  // Buffer only the small token response. A fixed length avoids the deployment's
+  // observed chunked-response resets without buffering image layers.
+  if (new URL(request.url).pathname === '/cr/tcr/v2/auth') {
+    const body = await response.arrayBuffer();
+    const headers = new Headers(response.headers);
+    headers.set('Content-Length', String(body.byteLength));
+    headers.set('Cache-Control', 'no-store');
+    return new Response(body, { status: response.status, headers });
+  }
+  return response;
 }

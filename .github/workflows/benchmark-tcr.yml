@@ -1,0 +1,37 @@
+name: Benchmark TCR push routes
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloudflare_url:
+        description: Cloudflare Worker HTTPS origin
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-tcr
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - name: Compare direct, EdgeOne, and Cloudflare pushes
+        env:
+          TCR_USERNAME: ${{ secrets.TCR_USERNAME }}
+          TCR_PASSWORD: ${{ secrets.TCR_PASSWORD }}
+          CF_BENCHMARK_URL: ${{ inputs.cloudflare_url }}
+        run: python3 scripts/benchmark-tcr-push.py
+      - name: Save benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcr-push-benchmark
+          path: tcr-benchmark-results.jsonl
+          retention-days: 7
+          if-no-files-found: error

@@ -143,6 +143,9 @@ function createFetchOptions({
  * @returns {Promise<Response>} Redirect-followed response, or the original response when no redirect is needed.
  */
 async function followDockerRedirectIfNeeded(response, targetUrl, finalFetchOptions) {
+  if (!['GET', 'HEAD'].includes(finalFetchOptions.method || 'GET')) {
+    return response;
+  }
   if (
     response.status !== 301 &&
     response.status !== 302 &&
@@ -358,7 +361,11 @@ export async function fetchUpstreamResponse({
   });
 
   let attempts = 0;
-  while (attempts < config.MAX_RETRIES) {
+  // Registry uploads consume a stream and may mutate upstream upload state.
+  // Let the client resume them; never replay a consumed request body.
+  const maxAttempts =
+    requestContext.isDocker && !['GET', 'HEAD'].includes(request.method) ? 1 : config.MAX_RETRIES;
+  while (attempts < maxAttempts) {
     /** @type {ReturnType<typeof setTimeout> | undefined} */
     let timeoutId;
 
@@ -384,6 +391,10 @@ export async function fetchUpstreamResponse({
 
       if (requestContext.isDocker && response.status === 401) {
         monitor.mark('docker_auth_challenge');
+        if (platform === 'cr-tcr' || !['GET', 'HEAD'].includes(request.method)) {
+          response = responseUnauthorized(requestContext.url, platform);
+          break;
+        }
         response = await retryDockerWithAnonymousToken({
           effectivePath,
           finalFetchOptions: fetchOptions,
@@ -406,7 +417,7 @@ export async function fetchUpstreamResponse({
       }
 
       attempts++;
-      if (attempts < config.MAX_RETRIES) {
+      if (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, config.RETRY_DELAY_MS * attempts));
       }
     } catch (error) {
@@ -417,7 +428,7 @@ export async function fetchUpstreamResponse({
         break;
       }
 
-      if (attempts >= config.MAX_RETRIES) {
+      if (attempts >= maxAttempts) {
         response = createErrorResponse('Upstream request failed', 502);
         responseGeneratedLocally = true;
         break;

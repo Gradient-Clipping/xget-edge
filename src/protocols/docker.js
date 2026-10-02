@@ -231,6 +231,9 @@ function resolveDockerAuthTarget(url, platforms) {
 
           const prefix = key.replace(/-/g, '/');
           if (fullRepoPath.startsWith(`${prefix}/`)) {
+            if (platformKey && platformKey !== key) {
+              throw new Error('Registry scope does not match authentication endpoint');
+            }
             platformKey = key;
             repoPath = fullRepoPath.slice(prefix.length + 1);
             break;
@@ -265,6 +268,8 @@ export function responseUnauthorized(url, platform) {
   const realmPath = platform ? `/cr/${platform.slice(3)}/v2/auth` : '/v2/auth';
   const headers = new Headers();
   headers.set('Content-Type', 'application/json');
+  headers.set('Cache-Control', 'no-store');
+  headers.set('Docker-Distribution-Api-Version', 'registry/2.0');
   headers.set('WWW-Authenticate', `Bearer realm="${url.origin}${realmPath}",service="Xget"`);
   return new Response(
     JSON.stringify({
@@ -329,4 +334,25 @@ export async function handleDockerAuth(request, url, config) {
 
   // 3. Fetch the token from the upstream realm
   return await fetchToken(wwwAuthenticate, target.upstreamScope, authorization || '');
+}
+
+/**
+ * Keeps Registry upload continuation URLs on the proxy, including signed query state.
+ * @param {string} location Upstream Location header.
+ * @param {string} targetUrl Upstream request URL.
+ * @param {URL} clientUrl Incoming proxy URL.
+ * @param {string} platform Registry platform key.
+ * @returns {string} Proxy continuation URL, or the original external URL.
+ */
+export function rewriteRegistryLocation(location, targetUrl, clientUrl, platform) {
+  const upstream = new URL(targetUrl);
+  const continuation = new URL(location, upstream);
+  if (continuation.origin !== upstream.origin || !continuation.pathname.startsWith('/v2/')) {
+    return location;
+  }
+  const name = platform.slice(3);
+  const path = clientUrl.pathname.startsWith('/v2/cr/')
+    ? `/v2/cr/${name}${continuation.pathname.slice(3)}`
+    : `/cr/${name}${continuation.pathname}`;
+  return `${clientUrl.origin}${path}${continuation.search}`;
 }
