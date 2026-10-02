@@ -15,7 +15,7 @@ import time
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 REPO = 'lazycampus/agent-backend'
-DIRECT = 'https://ccr.ccs.tencentyun.com'
+DIRECT = 'https://hkccr.ccs.tencentyun.com'
 ROUTES = {'direct': DIRECT, 'edgeone': 'https://xget.lazycampus.com',
           'cloudflare': os.environ['CF_BENCHMARK_URL'].rstrip('/')}
 cf_url = urlsplit(ROUTES['cloudflare'])

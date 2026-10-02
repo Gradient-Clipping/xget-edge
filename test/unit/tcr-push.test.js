@@ -121,13 +121,13 @@ describe('TCR Registry push', () => {
       })
     );
     expect(response.status).toBe(200);
-    expect(String(spy.mock.calls[0][0])).toBe('https://ccr.ccs.tencentyun.com/v2/');
+    expect(String(spy.mock.calls[0][0])).toBe('https://hkccr.ccs.tencentyun.com/v2/');
   });
 
   it('passes upload bytes and credentials through and rewrites signed upload continuation state', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       expect(String(input)).toBe(
-        'https://ccr.ccs.tencentyun.com/v2/lazycampus/image/blobs/uploads/id'
+        'https://hkccr.ccs.tencentyun.com/v2/lazycampus/image/blobs/uploads/id'
       );
       expect(init?.method).toBe('PATCH');
       expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer valid-token');
@@ -194,7 +194,7 @@ describe('TCR Registry push', () => {
           status: 401,
           headers: {
             'WWW-Authenticate':
-              'Bearer realm="https://ccr.ccs.tencentyun.com/service/token",service="token-service"'
+              'Bearer realm="https://hkccr.ccs.tencentyun.com/service/token",service="token-service"'
           }
         });
       }
@@ -228,7 +228,7 @@ describe('TCR Registry push', () => {
   });
 
   it('rewrites path-style upload locations and leaves external read locations intact', () => {
-    const target = 'https://ccr.ccs.tencentyun.com/v2/lazycampus/image/blobs/uploads/';
+    const target = 'https://hkccr.ccs.tencentyun.com/v2/lazycampus/image/blobs/uploads/';
     const client = new URL('https://proxy.example/cr/tcr/v2/lazycampus/image/blobs/uploads/');
     expect(
       rewriteRegistryLocation(
