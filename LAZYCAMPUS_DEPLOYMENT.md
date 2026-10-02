@@ -20,6 +20,12 @@ authentication for external clients. TCR validates credentials; the proxy stores
 none. Token and Registry responses are not cached. Uploads are streamed without
 automatic replay, and signed continuation URLs remain on the same proxy.
 
+The fixed TCR upstream is the Hong Kong personal registry,
+`hkccr.ccs.tencentyun.com`. Business publishing workflows push directly to that
+registry. The server verified that the authenticated `wecom-kf:1.0.52` manifest
+has the same digest through Xget and directly through Hong Kong TCR; the proxy
+response uses `Cache-Control: no-store`.
+
 Request timeouts and retries retain application defaults. Worker invocation
 logs, workers.dev, and preview URLs are disabled. No Agent package-source
 settings or business image-publishing workflows are changed by this hosting
@@ -47,6 +53,11 @@ production entry point. Access-policy tests import the production adapter.
 Regenerate binding types with
 `npx wrangler types worker-configuration.d.ts --include-runtime false` after
 changing bindings.
+
+The optional Docker image builds the upstream-compatible `src/index.js` with
+`wrangler.test.jsonc`, including the matching workerd compatibility date. It
+does not deploy the production domain; the guarded production Worker continues
+to use `wrangler.jsonc` and the verified Workers workflow above.
 
 The old EO Makers GitHub App installation was revoked after its only selected
 repository (`xget-edge`) was verified. The generated `pages` branch was archived

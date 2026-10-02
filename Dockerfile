@@ -4,12 +4,12 @@ FROM node:26-alpine AS builder
 WORKDIR /app
 
 # Install dependencies & wrangler
-COPY package*.json wrangler.toml ./
+COPY package*.json wrangler.test.jsonc ./
 RUN npm ci
 
 # Copy source and build
 COPY src ./src
-RUN npx wrangler deploy --dry-run --outdir=dist
+RUN npx wrangler deploy --config wrangler.test.jsonc --dry-run --outdir=dist
 
 # --- Stage 2: minimal runtime with workerd -------------------------
 FROM node:26-slim AS runtime
