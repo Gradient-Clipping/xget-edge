@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xget",
+  "account_id": "8398107a0f563924dc230af0da7cf7ba",
+  "main": "adapters/workers/production.js",
+  "compatibility_date": "2026-10-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "xget.lazycampus.com", "custom_domain": true }],
+  "vars": {
+    "XGET_ALLOWED_CLIENT_IPS": "1.14.95.189"
+  },
+  "observability": { "enabled": false }
+}

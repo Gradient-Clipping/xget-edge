@@ -4,7 +4,9 @@ import { configDefaults, defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [
     cloudflareTest({
-      wrangler: { configPath: './wrangler.toml' }
+      // Upstream integration tests exercise the proxy directly. Production
+      // access-policy tests import the guarded Workers adapter separately.
+      wrangler: { configPath: './wrangler.test.jsonc' }
     })
   ],
   test: {

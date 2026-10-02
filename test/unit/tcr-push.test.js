@@ -3,7 +3,7 @@ import { onRequest } from '../../adapters/pages/functions/[[path]].js';
 import { CONFIG } from '../../src/config/index.js';
 import { handleDockerAuth, rewriteRegistryLocation } from '../../src/protocols/docker.js';
 import worker from '../../src/index.js';
-import benchmarkWorker from '../../adapters/workers/tcr-benchmark.js';
+import benchmarkWorker from '../../adapters/workers/production.js';
 
 /** @type {ExecutionContext} */
 const ctx = { waitUntil() {}, passThroughOnException() {} };
@@ -31,6 +31,32 @@ function pages(request) {
 }
 
 describe('TCR Registry push', () => {
+  it('fails closed on Cloudflare when the allowlist is missing', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch');
+    const response = await benchmarkWorker.fetch(
+      new Request('https://proxy.example/npm/is-number/7.0.0', {
+        headers: { 'CF-Connecting-IP': '1.14.95.189' }
+      }),
+      {},
+      ctx
+    );
+    expect(response.status).toBe(503);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('does not authorize forwarded client IP headers without Cloudflare metadata', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch');
+    const response = await benchmarkWorker.fetch(
+      new Request('https://proxy.example/npm/is-number/7.0.0', {
+        headers: { 'X-Forwarded-For': '1.14.95.189', 'X-Real-IP': '1.14.95.189' }
+      }),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(403);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it('allows the server to compare package sources using the Cloudflare client IP', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
     const response = await benchmarkWorker.fetch(
