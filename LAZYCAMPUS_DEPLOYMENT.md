@@ -48,6 +48,19 @@ Regenerate binding types with
 `npx wrangler types worker-configuration.d.ts --include-runtime false` after
 changing bindings.
 
+The old EO Makers GitHub App installation was revoked after its only selected
+repository (`xget-edge`) was verified. The generated `pages` branch was archived
+as a local Git bundle before deletion.
+
+## Client verification
+
+Git, npm, pip, curl, Docker Hub authentication, and TCR authentication were
+verified through the production domain. The existing Cloudflare zone's Browser
+Integrity Check rejects the default `Python-urllib` user agent with HTTP 403 /
+error 1010 before the Worker. This hosting migration does not change that zone
+security setting. A valid client user agent is required; a successful curl check
+does not establish that every HTTP client's defaults are accepted.
+
 ## Historical benchmarks
 
 The manual TCR benchmark workflow and `wrangler.tcr-benchmark.jsonc` are
