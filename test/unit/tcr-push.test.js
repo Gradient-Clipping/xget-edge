@@ -3,6 +3,7 @@ import { onRequest } from '../../adapters/pages/functions/[[path]].js';
 import { CONFIG } from '../../src/config/index.js';
 import { handleDockerAuth, rewriteRegistryLocation } from '../../src/protocols/docker.js';
 import worker from '../../src/index.js';
+import benchmarkWorker from '../../adapters/workers/tcr-benchmark.js';
 
 /** @type {ExecutionContext} */
 const ctx = { waitUntil() {}, passThroughOnException() {} };
@@ -30,6 +31,32 @@ function pages(request) {
 }
 
 describe('TCR Registry push', () => {
+  it('allows the server to compare package sources using the Cloudflare client IP', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+    const response = await benchmarkWorker.fetch(
+      new Request('https://proxy.example/npm/is-number/7.0.0', {
+        headers: { 'CF-Connecting-IP': '1.14.95.189' }
+      }),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(200);
+    expect(String(spy.mock.calls[0][0])).toBe('https://registry.npmjs.org/is-number/7.0.0');
+  });
+
+  it('keeps package sources closed to other Cloudflare client IPs', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch');
+    const response = await benchmarkWorker.fetch(
+      new Request('https://proxy.example/npm/is-number/7.0.0', {
+        headers: { 'CF-Connecting-IP': '203.0.113.1' }
+      }),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(403);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it('challenges external Registry probes without fetching upstream or opening other routes', async () => {
     const spy = vi.spyOn(globalThis, 'fetch');
     const probe = await pages(new Request('https://proxy.example/v2/'));

@@ -42,12 +42,18 @@ blob digests are checked directly at TCR. Native Docker tests use distinct,
 equal-size layers to prevent layer deduplication from hiding upload failures.
 
 The Cloudflare adapter and `wrangler.tcr-benchmark.jsonc` use the same handler
-and authentication policy. A temporary preview deployment can be used for
-measurement without changing production DNS or the normal delivery pipeline.
+and authentication policy. The Cloudflare edge supplies `CF-Connecting-IP`,
+which the adapter maps to the shared IP policy; package and GitHub routes remain
+restricted to the server. The explicitly approved temporary custom origin is
+`https://xget-cf-benchmark.lazycampus.com`. Its Worker, domain binding, DNS record,
+and temporary deployment token are removed after measurement.
 The workflow saves timing, success, and verification results as a seven-day
 artifact. Credentials, tokens, and signed upload URLs are never recorded.
 
-EdgeOne Makers Edge Functions currently limit each request body to 1 MB. The
+Published EdgeOne Makers Edge Functions documentation lists a 1 MB request-body
+limit, but the bound deployment accepted complete 8 MiB OCI and native Docker
+pushes in the 2026-10-02 benchmark. Treat limits as deployment-specific until
+tested; the published limit alone is not a measurement of this endpoint. The
 benchmark tests 512 KiB chunks, an ordinary 8 MiB layer PATCH, and native Docker
 pushes separately. It also probes one 128 MiB layer per route to expose account
 upload limits beyond small-image tests. Passing chunked tests does not prove that normal Docker

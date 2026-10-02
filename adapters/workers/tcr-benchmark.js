@@ -9,6 +9,12 @@ export default {
    * @returns {Promise<Response>} Registry response.
    */
   fetch(request, env, ctx) {
+    // Cloudflare supplies this header at its edge; it replaces client input.
+    // Adapt it to the shared Pages policy so the allowlisted server can also
+    // compare GitHub and package sources without opening those routes publicly.
+    Object.defineProperty(request, 'eo', {
+      value: { clientIp: request.headers.get('CF-Connecting-IP') || '' }
+    });
     return onRequest({
       request,
       env,
