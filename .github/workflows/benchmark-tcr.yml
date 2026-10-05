@@ -29,7 +29,7 @@ jobs:
         run: python3 scripts/benchmark-tcr-push.py
       - name: Save benchmark results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tcr-push-benchmark
           path: tcr-benchmark-results.jsonl
