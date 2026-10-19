@@ -31,7 +31,8 @@ permissions:
 jobs:
   merge:
     name: Auto-merge Dependabot PRs
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - name: Merge Dependabot PRs when checks pass

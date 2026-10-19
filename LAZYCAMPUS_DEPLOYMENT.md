@@ -11,8 +11,9 @@ by the `xget` Cloudflare Worker. The source repository keeps its existing name,
 `CF-Connecting-IP` and the existing shared proxy/access-policy implementation.
 The retained Pages adapter is local compatibility code, not an EdgeOne backend.
 
-`XGET_ALLOWED_CLIENT_IPS=1.14.95.189` permits the production server to use all
-existing Xget sources. An absent allowlist fails closed with HTTP 503. Other
+`XGET_ALLOWED_CLIENT_IPS=1.14.95.189,43.143.118.127` permits the production server
+and the dedicated organization Actions runner to use all existing Xget sources.
+An absent allowlist fails closed with HTTP 503. Other
 clients receive HTTP 403 for package, GitHub, and other source routes.
 
 The existing fixed TCR routes and `/v2/` probe retain upstream Basic/Bearer

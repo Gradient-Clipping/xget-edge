@@ -9,7 +9,7 @@
   "preview_urls": false,
   "routes": [{ "pattern": "xget.lazycampus.com", "custom_domain": true }],
   "vars": {
-    "XGET_ALLOWED_CLIENT_IPS": "1.14.95.189"
+    "XGET_ALLOWED_CLIENT_IPS": "1.14.95.189,43.143.118.127"
   },
   "observability": { "enabled": false }
 }
