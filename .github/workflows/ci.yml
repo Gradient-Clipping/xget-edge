@@ -87,6 +87,7 @@ jobs:
         run: npm run test:run
         env:
           CI: true
+          XGET_TEST_USE_XGET: ${{ runner.environment == 'self-hosted' && 'true' || 'false' }}
 
       - name: Generate coverage report
         run: npm run test:coverage

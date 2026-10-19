@@ -4,6 +4,9 @@
  */
 
 declare module 'cloudflare:test' {
+  /** Test-only Miniflare bindings. */
+  export const env: Record<string, unknown>;
+
   /**
    * Service binding to the default export defined in the `main` worker
    */
