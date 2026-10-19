@@ -1,5 +1,5 @@
 import { SELF } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('Container Registry Support', () => {
   describe('Docker API Version Check', () => {
@@ -168,29 +168,57 @@ describe('Container Registry Support', () => {
     });
 
     it('should allow PUT for manifest uploads', async () => {
-      const response = await SELF.fetch('https://example.com/cr/ghcr/v2/test/repo/manifests/tag', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/vnd.docker.distribution.manifest.v2+json'
-        },
-        body: JSON.stringify({
-          schemaVersion: 2,
-          mediaType: 'application/vnd.docker.distribution.manifest.v2+json'
-        })
-      });
+      const upstream = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response(null, { status: 403 }));
+      try {
+        const response = await SELF.fetch(
+          'https://example.com/cr/ghcr/v2/test/repo/manifests/tag',
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/vnd.docker.distribution.manifest.v2+json'
+            },
+            body: JSON.stringify({
+              schemaVersion: 2,
+              mediaType: 'application/vnd.docker.distribution.manifest.v2+json'
+            })
+          }
+        );
 
-      expect(response.status).not.toBe(405);
+        expect(upstream).toHaveBeenCalledWith(
+          'https://ghcr.io/v2/test/repo/manifests/tag',
+          expect.objectContaining({ method: 'PUT', body: expect.anything() })
+        );
+        expect(response.status).toBe(403);
+      } finally {
+        upstream.mockRestore();
+      }
     });
 
     it('should allow POST for blob uploads', async () => {
-      const response = await SELF.fetch('https://example.com/cr/ghcr/v2/test/repo/blobs/uploads/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream'
-        }
-      });
+      const upstream = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response(null, { status: 403 }));
+      try {
+        const response = await SELF.fetch(
+          'https://example.com/cr/ghcr/v2/test/repo/blobs/uploads/',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream'
+            }
+          }
+        );
 
-      expect(response.status).not.toBe(405);
+        expect(upstream).toHaveBeenCalledWith(
+          'https://ghcr.io/v2/test/repo/blobs/uploads/',
+          expect.objectContaining({ method: 'POST' })
+        );
+        expect(response.status).toBe(403);
+      } finally {
+        upstream.mockRestore();
+      }
     });
   });
 
