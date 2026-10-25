@@ -41,8 +41,7 @@ permissions:
 jobs:
   lint:
     name: Lint
-    runs-on: >-
-      ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -65,8 +64,7 @@ jobs:
 
   test:
     name: Test and Coverage
-    runs-on: >-
-      ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -87,7 +85,7 @@ jobs:
         run: npm run test:run
         env:
           CI: true
-          XGET_TEST_USE_XGET: ${{ runner.environment == 'self-hosted' && 'true' || 'false' }}
+          XGET_TEST_USE_XGET: "false"
 
       - name: Generate coverage report
         run: npm run test:coverage
@@ -132,8 +130,7 @@ jobs:
 
   typecheck:
     name: Type Check
-    runs-on: >-
-      ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
